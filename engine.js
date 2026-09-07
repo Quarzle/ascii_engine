@@ -4,16 +4,22 @@ const FPS = 60;
 const FRAME_TIME = 1000 / FPS;
 
 const SCREEN_WIDTH = 87;
-const SCREEN_HEIGHT = 22;
+const SCREEN_HEIGHT = 26;
+
+const FONT_WIDTH_MULT = 0.55
 
 // ===================
 //   Screen Buffer
 // ===================
 
+const sounds = new Map();
+const playingSounds = new Map();
+
 const screen = createScreen();
 
 let screenDirty = true;
 let renderSuspended = false;
+
 
 function createCell(char = " ", style = "") {
 	return {
@@ -117,32 +123,32 @@ function mouseUp(event) {
 }
 
 function getMousePosition() {
-	const padding = parseInt(
-		window.getComputedStyle(mainWindow).paddingLeft,
-		10
-	);
+	const rect = mainWindow.getBoundingClientRect();
+	const style = window.getComputedStyle(mainWindow);
 
-	const width = mainWindow.clientWidth;
-	const height = mainWindow.clientHeight;
+	const paddingLeft = parseFloat(style.paddingLeft);
+	const paddingTop = parseFloat(style.paddingTop);
 
-	let x =
-		((mouseX + padding) /
-			(width - 2 * padding)) *
-		SCREEN_WIDTH;
+	const fontSize = parseFloat(style.fontSize);
 
-	let y =
-		((mouseY + padding) /
-			(height - 2 * padding)) *
-		SCREEN_HEIGHT;
 
-	x -= 4;
-	y -= 2;
+	const lineHeight = parseFloat(style.lineHeight);
+
+	const charWidth = fontSize * FONT_WIDTH_MULT;
+
+	const localX =
+		mouseX - rect.left - paddingLeft;
+
+	const localY =
+		mouseY - rect.top - paddingTop;
 
 	return {
-		x: Math.round(x),
-		y: Math.round(y)
+		x: Math.floor(localX / charWidth),
+		y: Math.floor(localY / lineHeight)
 	};
 }
+
+
 
 // ===================
 //   Screen Rendering
@@ -196,7 +202,7 @@ function batchRender(callback) {
 // ===================
 
 function htmlToCells(html, inheritedStyle = "") {
-	// Fast path for ordinary text.
+	// Fast exit for ordinary text.
 	if (!html.includes("<")) {
 		return Array.from(html, char => ({
 			char,
@@ -228,7 +234,7 @@ function htmlToCells(html, inheritedStyle = "") {
 		let childStyle = style;
 
 		if (node.hasAttribute("style")) {
-			childStyle = mergeStyles(
+			childStyle = concatStyles(
 				style,
 				node.getAttribute("style")
 			);
@@ -246,7 +252,7 @@ function htmlToCells(html, inheritedStyle = "") {
 	return cells;
 }
 
-function mergeStyles(parentStyle, childStyle) {
+function concatStyles(parentStyle, childStyle) {
 	if (!parentStyle) {
 		return childStyle;
 	}
@@ -255,8 +261,7 @@ function mergeStyles(parentStyle, childStyle) {
 		return parentStyle;
 	}
 
-	// CSS declarations later in the string override
-	// earlier declarations, matching the original behavior.
+	// CSS declarations later in the string override earlier declarations
 	return `${parentStyle};${childStyle}`;
 }
 
@@ -383,8 +388,7 @@ function insertText(x, y, text, inheritedStyle = "") {
 		sourceIndex = lineEnd + 1;
 	}
 
-	// Preserve the original behavior:
-	// calling insertText() immediately updates the display.
+	// if this is uncommented, insertText() immediately updates the display.
 	// renderScreen();
 }
 
@@ -528,6 +532,109 @@ function boldText(text) {
 	return `<span style="font-weight: bold">${text}</span>`;
 }
 
+function customText(text, className) {
+	return `<span class=${className}">${text}</span>`;
+}
+
+// ===================
+//       Audio
+// ===================
+
+function preloadSounds(soundFiles) {
+	for (const [name, filePath] of Object.entries(soundFiles)) {
+		const audio = new Audio(filePath);
+		audio.preload = "auto";
+
+		sounds.set(name, audio);
+		playingSounds.set(name, new Set());
+	}
+}
+
+function playSound(name, volume = 1, pitch = 1) {
+	const source = sounds.get(name);
+
+	if (!source) {
+		console.warn(`Sound not loaded: ${name}`);
+		return;
+	}
+
+	const audio = source.cloneNode();
+
+	// Note: pitch also changes speed
+	audio.volume = Math.max(0, Math.min(1, volume));
+	audio.playbackRate = pitch;
+	audio.preservesPitch = false;
+	audio.mozPreservesPitch = false;
+	audio.webkitPreservesPitch = false;
+
+	// Track this instance
+	if (!playingSounds.has(name)) {
+		playingSounds.set(name, new Set());
+	}
+
+	playingSounds.get(name).add(audio);
+
+	// Remove it when it finishes
+	audio.addEventListener("ended", () => {
+		playingSounds.get(name)?.delete(audio);
+	});
+
+	audio.play().catch(error => {
+		console.warn(`Could not play sound "${name}":`, error);
+		playingSounds.get(name)?.delete(audio);
+	});
+}
+
+function stopSound(name) {
+	const soundsPlaying = playingSounds.get(name);
+
+	if (!soundsPlaying) {
+		console.warn(`Sound not loaded: ${name}`);
+		return;
+	}
+
+	for (const audio of soundsPlaying) {
+		audio.pause();
+		audio.currentTime = 0;
+	}
+
+	soundsPlaying.clear();
+}
+
+function fadeOutSound(name, duration = 500) {
+	const soundsPlaying = playingSounds.get(name);
+
+	if (!soundsPlaying) {
+		console.warn(`Sound not loaded: ${name}`);
+		return;
+	}
+
+	for (const audio of soundsPlaying) {
+		const startVolume = audio.volume;
+		const startTime = performance.now();
+
+		function fade(timestamp) {
+			const elapsed = timestamp - startTime;
+			const progress = Math.min(elapsed / duration, 1);
+
+			audio.volume = startVolume * (1 - progress);
+
+			if (progress < 1) {
+				requestAnimationFrame(fade);
+			} else {
+				audio.pause();
+				audio.currentTime = 0;
+				audio.volume = startVolume;
+
+				soundsPlaying.delete(audio);
+			}
+		}
+
+		requestAnimationFrame(fade);
+	}
+}
+
+
 // ===================
 //       Main Loop
 // ===================
@@ -543,6 +650,7 @@ function tick() {
 }
 
 function init() {
+
 	clearScreen();
 	initializeInput();
 

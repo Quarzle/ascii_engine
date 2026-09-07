@@ -1,7 +1,9 @@
 let textBoxes = []
 
 function setup() {
-	console.log("Game Started");
+	preloadSounds({
+		test: "audio/ding.mp3",
+	});
 
 	textBoxes.push({
 		x: 5,
@@ -25,6 +27,15 @@ function update() {
 			text: "Wow, another\n cool box!"
 		});
 	}
+
+	if (isKeyJustPressed("KeyE")) {
+		playSound("test")
+	}
+
+	if (isKeyJustPressed("KeyR")) {
+		playSound("test", 1, 0.75	)
+	}
+
 
 	if (isKeyJustPressed("mouse2")) {
 		textBoxes.push({
