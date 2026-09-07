@@ -1,0 +1,26 @@
+:root {
+	--primary-color: #77b5de;
+	--background-color: #1e1e1e;
+	--text-color: #ffffff;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	/* overflow: hidden; */
+}
+
+.game_window {
+	display: block;
+	user-select: none;
+	box-sizing: border-box;
+	width: 100vw;
+	aspect-ratio: 16 / 9;
+	/* height: 100vh; */
+	padding: 20px;
+	background-color: var(--background-color);
+	color: var(--text-color);
+	font-family: monospace;
+	font-size: 2vw;
+	margin: 0;
+}
