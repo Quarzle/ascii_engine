@@ -6,9 +6,9 @@ function setup() {
 	textBoxes.push({
 		x: 5,
 		y: 5,
-		text: "Wow, this is a cool textbox!"
+		text: `Wow, this is a ${boldText("cool")} textbox!`
 	});
-	
+
 }
 
 function update() {
@@ -18,7 +18,7 @@ function update() {
 		drawTextBox(textBox.x, textBox.y, textBox.text);
 	}
 
-	if (isKeyJustPressed("click")) {
+	if (isKeyJustPressed("mouse0")) {
 		textBoxes.push({
 			x: getMousePosition().x,
 			y: getMousePosition().y,
@@ -26,6 +26,12 @@ function update() {
 		});
 	}
 
+	if (isKeyPressed("mouse0")) {
+		drawTextBox(getMousePosition().x, getMousePosition().y, "Wow, another\n cool box!");
+	} else {
+		drawTextBox(getMousePosition().x, getMousePosition().y, "Wow, another\n cool box!", "gray");
+	}
 	insertText(getMousePosition().x, getMousePosition().y, "X");
+
 }
 
