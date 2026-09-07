@@ -1,5 +1,6 @@
 let textBoxes = []
 
+
 function setup() {
 	preloadSounds({
 		test: "audio/ding.mp3",
@@ -13,6 +14,7 @@ function setup() {
 
 }
 
+
 function update() {
 	clearScreen();
 
@@ -20,6 +22,14 @@ function update() {
 		drawTextBox(textBox.x, textBox.y, textBox.text);
 	}
 
+	doInput()
+
+	insertText(getMousePosition().x, getMousePosition().y, "X");
+
+}
+
+
+function doInput() {
 	if (isKeyJustPressed("mouse0")) {
 		textBoxes.push({
 			x: getMousePosition().x,
@@ -33,7 +43,7 @@ function update() {
 	}
 
 	if (isKeyJustPressed("KeyR")) {
-		playSound("test", 1, 0.75	)
+		playSound("test", 1, 0.75)
 	}
 
 
@@ -44,8 +54,4 @@ function update() {
 			text: `This is a box with a ${colourText("red", "red")} word!`
 		});
 	}
-
-	insertText(getMousePosition().x, getMousePosition().y, "X");
-
 }
-
