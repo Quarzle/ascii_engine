@@ -26,11 +26,14 @@ function update() {
 		});
 	}
 
-	if (isKeyPressed("mouse0")) {
-		drawTextBox(getMousePosition().x, getMousePosition().y, "Wow, another\n cool box!");
-	} else {
-		drawTextBox(getMousePosition().x, getMousePosition().y, "Wow, another\n cool box!", "gray");
+	if (isKeyJustPressed("mouse2")) {
+		textBoxes.push({
+			x: getMousePosition().x,
+			y: getMousePosition().y,
+			text: `This is a box with a ${colourText("red", "red")} word!`
+		});
 	}
+
 	insertText(getMousePosition().x, getMousePosition().y, "X");
 
 }
