@@ -1,4 +1,4 @@
-let textBoxes = []
+let textBoxes = [];
 
 
 function setup() {
@@ -22,7 +22,7 @@ function update() {
 		drawTextBox(textBox.x, textBox.y, textBox.text);
 	}
 
-	doInput()
+	doInput();
 
 	insertText(getMousePosition().x, getMousePosition().y, "X");
 
@@ -39,11 +39,15 @@ function doInput() {
 	}
 
 	if (isKeyJustPressed("KeyE")) {
-		playSound("test")
+		playSound("test");
+	}
+
+	if (isKeyJustPressed("KeyG")) {
+		console.log(getChar(getMousePosition().x, getMousePosition().y));
 	}
 
 	if (isKeyJustPressed("KeyR")) {
-		playSound("test", 1, 0.75)
+		playSound("test", 1, 0.75);
 	}
 
 

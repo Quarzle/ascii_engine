@@ -294,8 +294,16 @@ function cellsToHTML(cells) {
 // ===================
 
 function getChar(x, y) {
-	// TODO: Finish this
-	return "";
+	if (
+		x < 0 ||
+		x >= SCREEN_WIDTH ||
+		y < 0 ||
+		y >= SCREEN_HEIGHT
+	) {
+		return "";
+	}
+	
+	return screen[y][x].char;
 }
 
 function writeCell(x, y, cell) {
