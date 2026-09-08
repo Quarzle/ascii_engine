@@ -1,4 +1,5 @@
-import { Engine,
+import {
+	Engine,
 	colourText,
 	boldText
 } from "./engine/engine.js";
@@ -20,12 +21,13 @@ engine.start({
 
 
 // ---Game code-----
+let gameState = "menu";
+
 let playerX = 40;
 let playerY = 12;
 
 let moveCooldown = [0, 0];
 const moveCooldownTime = [0.1, 0.15] //in seconds
-
 
 
 function setup() {
@@ -35,57 +37,91 @@ function setup() {
 
 }
 
+
 function update(deltaTime) {
-	engine.screen.clear("-");
+	engine.screen.clear(" ");
 
 	engine.screen.drawTextBox(
 		5,
 		3,
-		"Welcome to my game!"
+		"Welcome to my game!",
 	);
+
+	engine.screen.drawBox(
+		60,
+		17,
+		20,
+		5,
+		"pink"
+	);
+
+	engine.screen.insertText(
+		4,
+		14,
+		maze
+	);
+
 
 	movement(deltaTime);
 
 	if (input.justPressed("Space")) {
-		audio.play("ding", 1, engine.random.float(0.5, 1.5));
+		audio.play("ding", 1, engine.random.float(0.6, 1.4));
 	}
 
-	engine.screen.write(
+	engine.screen.insertText(
 		playerX,
 		playerY,
-		colourText("O", "red")
+		colourText("▲", "red")
 	);
 }
+
 
 function movement(deltaTime) {
 	moveCooldown[0] -= deltaTime;
 	moveCooldown[1] -= deltaTime;
 
-	if (input.isPressed("KeyA")) {
-		if (moveCooldown[0] < 0) {
-			playerX -= 1;
-			moveCooldown[0] = moveCooldownTime[0];
+	if (moveCooldown[0] < 0) {
+		playerX -= (input.isPressed("KeyA") - input.isPressed("KeyD"));
+
+		moveCooldown[0] = moveCooldownTime[0];
+
+		// Collision with any other tile
+		if (engine.screen.getScreenText(playerX, playerY) != " ") {
+			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
+			moveCooldown[0] = 0;
 		}
 	}
 
-	if (input.isPressed("KeyD")) {
-		if (moveCooldown[0] < 0) {
-			playerX += 1;
-			moveCooldown[0] = moveCooldownTime[0];
-		}
-	}
+	if (moveCooldown[1] < 0) {
+		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
+		moveCooldown[1] = moveCooldownTime[1];
 
-	if (input.isPressed("KeyW")) {
-		if (moveCooldown[1] < 0) {
-			playerY -= 1;
-			moveCooldown[1] = moveCooldownTime[1];
-		}
-	}
-
-	if (input.isPressed("KeyS")) {
-		if (moveCooldown[1] < 0) {
-			playerY += 1;
-			moveCooldown[1] = moveCooldownTime[1];
+		if (engine.screen.getScreenText(playerX, playerY) != " ") {
+			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
+			moveCooldown[1] = 0;
 		}
 	}
 }
+
+
+const maze = 
+`
+╭──────┬───  ─╮
+│      |      │
+│             │
+├─  ──────────┤
+│             
+└─────────────┘`
+
+/*
+╔╗╦╬
+║╠╣
+╚╝╩═
+┌┐┬┼╷
+│├┤╶╴
+└┘┴─╵
+╭╮
+╰╯
+╱╲╳
+█ ▓▒░
+*/

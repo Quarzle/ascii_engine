@@ -34,7 +34,7 @@ export class Screen {
 		this.dirty = true;
 	}
 
-	clear(text=" ") {
+	clear(text = " ") {
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
 				this.buffer[y][x].char = text;
@@ -59,7 +59,11 @@ export class Screen {
 		this.dirty = false;
 	}
 
-	getChar(x, y) {
+	getScreenText(x, y, width = 1, height = 1) {
+		if (width < 1 || height < 1) {
+			return "";
+		}
+
 		if (
 			x < 0 ||
 			x >= this.width ||
@@ -69,7 +73,21 @@ export class Screen {
 			return "";
 		}
 
-		return this.buffer[y][x].char;
+		if (width == 1 && height == 1) {
+			return this.buffer[y][x].char;
+		} else {
+			let result = "";
+			for (let j = 0; j < height; j++) {
+				for (let i = 0; i < width; i++) {
+					result += this.getScreenText(
+						x + i,
+						y + j
+					);
+				}
+				result += "\n";
+			}
+			return result;
+		}
 	}
 
 	writeCell(x, y, cell) {
@@ -97,7 +115,7 @@ export class Screen {
 		this.markDirty();
 	}
 
-	write(x, y, text, inheritedStyle = "") {
+	insertText(x, y, text, inheritedStyle = "") {
 		const cells = htmlToCells(text, inheritedStyle);
 
 		let sourceIndex = 0;
@@ -157,7 +175,7 @@ export class Screen {
 		colour = "var(--text-color)"
 	) {
 		if (width < 2 || height < 2) {
-			this.write(x, y, "▯");
+			this.insertText(x, y, "▯");
 			return;
 		}
 
@@ -181,7 +199,7 @@ export class Screen {
 			colour
 		);
 
-		this.write(x, y, text);
+		this.insertText(x, y, text);
 	}
 
 	drawTextBox(
@@ -189,7 +207,8 @@ export class Screen {
 		y,
 		textContent,
 		colour = "var(--text-color)",
-		padding = 1
+		padding = 1,
+		style = 1
 	) {
 		const cells = htmlToCells(textContent);
 
@@ -215,17 +234,38 @@ export class Screen {
 		const horizontal =
 			"─".repeat(width + padding * 2);
 
-		let text =
-			colourText(
+		let text;
+		if (style === 2) {
+			text = colourText(
+				`╭${horizontal}╮`,
+				colour
+			) + "\n";
+		} else if (style === 3) {
+			text = colourText(
+				`╔${horizontal}╗`,
+				colour
+			) + "\n";
+		} else {
+			text = colourText(
 				`┌${horizontal}┐`,
 				colour
 			) + "\n";
+		}
+
 
 		for (const line of lines) {
-			text += colourText(
-				`│${" ".repeat(padding)}`,
-				colour
-			);
+			if (style === 3) {
+				text += colourText(
+					`║${" ".repeat(padding)}`,
+					colour
+				);
+			} else {
+				text += colourText(
+					`│${" ".repeat(padding)}`,
+					colour
+				);
+			}
+
 
 			text += cellsToHTML(line);
 
@@ -244,7 +284,7 @@ export class Screen {
 			colour
 		);
 
-		this.write(x, y, text);
+		this.insertText(x, y, text);
 	}
 }
 
