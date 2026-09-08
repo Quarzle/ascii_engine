@@ -34,7 +34,7 @@ function doInput() {
 		textBoxes.push({
 			x: getMousePosition().x,
 			y: getMousePosition().y,
-			text: "Wow, another\n cool box!"
+			text: `${colourText("Wow, another\n cool box!", "green")}`
 		});
 	}
 

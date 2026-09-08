@@ -293,6 +293,11 @@ function cellsToHTML(cells) {
 //    Screen Utils
 // ===================
 
+function getChar(x, y) {
+	// TODO: Finish this
+	return "";
+}
+
 function writeCell(x, y, cell) {
 	if (
 		x < 0 ||
@@ -374,7 +379,7 @@ function insertText(x, y, text, inheritedStyle = "") {
 }
 
 // ===================
-//      Text Box
+//    Box functions
 // ===================
 
 function drawTextBox(
@@ -389,7 +394,7 @@ function drawTextBox(
 	const lines = [];
 	let currentLine = [];
 
-	let final_text = "";
+	let finalText = "";
 
 	for (const cell of cells) {
 		if (cell.char === "\n") {
@@ -411,13 +416,12 @@ function drawTextBox(
 		"─".repeat(width + padding * 2);
 
 	// Top
-	final_text = final_text + colourText(`┌${horizontal}┐`, colour) + "\n";
+	finalText = finalText + colourText(`┌${horizontal}┐`, colour) + "\n";
 
 
 	// Content
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		
 
 		// Left border + padding
 		let line_text = colourText(`│${" ".repeat(padding)}`, colour);
@@ -429,54 +433,42 @@ function drawTextBox(
 		line_text = line_text + colourText(`${" ".repeat(width - line.length + padding)}│`, colour);
 
 		line_text = line_text + "\n";
-		final_text = final_text + line_text;
+		finalText = finalText + line_text;
 	}
 
 	// Bottom
-	final_text = final_text + colourText(`└${horizontal}┘`, colour);
+	finalText = finalText + colourText(`└${horizontal}┘`, colour);
 
-	insertText(x, y, final_text);
+	insertText(x, y, finalText);
 }
 
-// ===================
-//        Box
-// ===================
 
-function drawBox(x, y, width, height) {
+function drawBox(x, y, width, height, colour="var(--text-color)") {
 	if (width < 2 || height < 2) {
-		return;
+		insertText(x, y, "▯");
+		return; //TODO: maybe replace this with box char?
 	}
 
-	batchRender(() => {
-		const horizontal =
-			"─".repeat(width - 2);
+	finalText = "";
 
-		const middle =
-			`│${" ".repeat(width - 2)}│`;
+	const horizontal =
+		"─".repeat(width - 2);
 
-		// Top
-		insertText(
-			x,
-			y,
-			`┌${horizontal}┐`
-		);
+	const middle =
+		`│${" ".repeat(width - 2)}│`;
 
-		// Sides
-		for (let i = 1; i < height - 1; i++) {
-			insertText(
-				x,
-				y + i,
-				middle
-			);
-		}
+	// Top
+	finalText = finalText + colourText(`┌${horizontal}┐`+"\n", colour);
 
-		// Bottom
-		insertText(
-			x,
-			y + height - 1,
-			`└${horizontal}┘`
-		);
-	});
+	// Sides
+	for (let i = 1; i < height - 1; i++) {
+		finalText = finalText + colourText(middle + "\n", colour);
+	}
+
+	// Bottom
+	finalText = finalText + colourText(`└${horizontal}┘`+"\n", colour);
+
+	insertText(x, y, finalText);
 }
 
 // ===================
