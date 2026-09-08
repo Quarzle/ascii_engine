@@ -178,25 +178,6 @@ function renderScreen() {
 	screenDirty = false;
 }
 
-// Temporarily prevents individual drawing operations
-// from rendering. Useful for functions that perform
-// multiple insertText() calls.
-function batchRender(callback) {
-	const previousState = renderSuspended;
-
-	renderSuspended = true;
-
-	try {
-		callback();
-	} finally {
-		renderSuspended = previousState;
-	}
-
-	if (!renderSuspended) {
-		renderScreen();
-	}
-}
-
 // ===================
 //    HTML → Cells
 // ===================
@@ -403,80 +384,58 @@ function drawTextBox(
 	colour = "var(--text-color)",
 	padding = 1
 ) {
-	batchRender(() => {
-		const cells = htmlToCells(textContent);
+	const cells = htmlToCells(textContent);
 
-		const lines = [];
-		let currentLine = [];
+	const lines = [];
+	let currentLine = [];
 
-		for (const cell of cells) {
-			if (cell.char === "\n") {
-				lines.push(currentLine);
-				currentLine = [];
-			} else {
-				currentLine.push(cell);
-			}
+	let final_text = "";
+
+	for (const cell of cells) {
+		if (cell.char === "\n") {
+			lines.push(currentLine);
+			currentLine = [];
+		} else {
+			currentLine.push(cell);
 		}
+	}
 
-		lines.push(currentLine);
+	lines.push(currentLine);
 
-		const width = Math.max(
-			0,
-			...lines.map(line => line.length)
-		);
+	const width = Math.max(
+		0,
+		...lines.map(line => line.length)
+	);
 
-		const horizontal =
-			"─".repeat(width + padding * 2);
+	const horizontal =
+		"─".repeat(width + padding * 2);
 
-		const style = `color: ${colour};`;
+	// Top
+	final_text = final_text + colourText(`┌${horizontal}┐`, colour) + "\n";
 
-		// Top
-		insertText(
-			x,
-			y,
-			`┌${horizontal}┐`,
-			style
-		);
 
-		// Content
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
+	// Content
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		
 
-			// Left border + padding
-			insertText(
-				x,
-				y + i + 1,
-				`│${" ".repeat(padding)}`,
-				style
-			);
+		// Left border + padding
+		let line_text = colourText(`│${" ".repeat(padding)}`, colour);
 
-			// Actual content
-			insertText(
-				x + padding + 1,
-				y + i + 1,
-				cellsToHTML(line),
-				style
-			);
+		// Text content
+		line_text = line_text + cellsToHTML(line);
 
-			// Right padding + border
-			insertText(
-				x + padding + 1 + line.length,
-				y + i + 1,
-				`${" ".repeat(
-					width - line.length + padding
-				)}│`,
-				style
-			);
-		}
+		// Right padding + border
+		line_text = line_text + colourText(`${" ".repeat(width - line.length + padding)}│`, colour);
 
-		// Bottom
-		insertText(
-			x,
-			y + lines.length + 1,
-			`└${horizontal}┘`,
-			style
-		);
-	});
+		line_text = line_text + "\n";
+		final_text = final_text + line_text;
+	}
+
+	// Bottom
+	final_text = final_text + colourText(`└${horizontal}┘`, colour);
+
+	insertText(x, y, final_text);
 }
 
 // ===================
