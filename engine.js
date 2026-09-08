@@ -77,7 +77,7 @@ function updateInput() {
 	unreportedKeys.clear();
 }
 
-function isKeyJustPressed(keyCode, consume = true) {
+function isKeyJustPressed(keyCode, consume = false) {
 	if (!unreportedKeys.has(keyCode)) {
 		return false;
 	}
@@ -643,7 +643,6 @@ function tick() {
 	update();
 	updateInput();
 
-	// Only touch the DOM if something actually changed.
 	renderScreen();
 
 	requestAnimationFrame(tick);
