@@ -1,61 +1,83 @@
-let textBoxes = [];
+import { Engine } from "./engine/engine.js";
+import {
+	colourText,
+	boldText
+} from "./engine/text.js";
 
+const engine = new Engine({
+	element: "#mainWindow",
+	width: 87,
+	height: 26,
+	fps: 60
+});
 
-function setup() {
-	preloadSounds({
-		test: "audio/ding.mp3",
-	});
+let playerX = 40;
+let playerY = 12;
 
-	textBoxes.push({
-		x: 5,
-		y: 5,
-		text: `Wow, this is a ${boldText("cool")} textbox!`
-	});
+let moveCooldown = [0, 0];
+const moveCooldownTime = [0.1, 0.15] //in seconds
 
-}
+engine.start({
+	setup(game) {
+		// game.audio.preload({
+		//     click: "audio/ding.wav"
+		// });
 
+	},
 
-function update() {
-	clearScreen();
+	update(game, deltaTime) {
+		game.screen.clear("-");
 
-	for (const textBox of textBoxes) {
-		drawTextBox(textBox.x, textBox.y, textBox.text);
+		game.screen.drawTextBox(
+			5,
+			3,
+			"Welcome to my game!"
+		);
+
+		movement(game, deltaTime);
+
+		if (game.input.justPressed("Space")) {
+			game.audio.play("click");
+		}
+
+		game.screen.write(
+			playerX,
+			playerY,
+			colourText("O", "red")
+		);
+	}
+});
+
+function movement(game, deltaTime) {
+
+	moveCooldown[0] -= deltaTime;
+	moveCooldown[1] -= deltaTime;
+
+	if (game.input.isPressed("KeyA")) {
+		if (moveCooldown[0] < 0) {
+			playerX -= 1;
+			moveCooldown[0] = moveCooldownTime[0];
+		}
 	}
 
-	doInput();
-
-	insertText(getMousePosition().x, getMousePosition().y, "X");
-
-}
-
-
-function doInput() {
-	if (isKeyJustPressed("mouse0")) {
-		textBoxes.push({
-			x: getMousePosition().x,
-			y: getMousePosition().y,
-			text: `${colourText("Wow, another\n cool box!", "green")}`
-		});
+	if (game.input.isPressed("KeyD")) {
+		if (moveCooldown[0] < 0) {
+			playerX += 1;
+			moveCooldown[0] = moveCooldownTime[0];
+		}
 	}
 
-	if (isKeyJustPressed("KeyE")) {
-		playSound("test");
+	if (game.input.isPressed("KeyW")) {
+		if (moveCooldown[1] < 0) {
+			playerY -= 1;
+			moveCooldown[1] = moveCooldownTime[1];
+		}
 	}
 
-	if (isKeyJustPressed("KeyG")) {
-		console.log(getChar(getMousePosition().x, getMousePosition().y));
-	}
-
-	if (isKeyJustPressed("KeyR")) {
-		playSound("test", 1, 0.75);
-	}
-
-
-	if (isKeyJustPressed("mouse2")) {
-		textBoxes.push({
-			x: getMousePosition().x,
-			y: getMousePosition().y,
-			text: `This is a box with a ${colourText("red", "red")} word!`
-		});
+	if (game.input.isPressed("KeyS")) {
+		if (moveCooldown[1] < 0) {
+			playerY += 1;
+			moveCooldown[1] = moveCooldownTime[1];
+		}
 	}
 }

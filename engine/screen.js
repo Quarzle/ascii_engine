@@ -1,0 +1,258 @@
+import {
+	htmlToCells,
+	cellsToHTML
+} from "./text.js";
+
+export class Screen {
+	constructor(engine) {
+		this.engine = engine;
+
+		this.width = engine.width;
+		this.height = engine.height;
+		this.element = engine.element;
+
+		this.buffer = this.createBuffer();
+
+		this.dirty = true;
+		this.renderSuspended = false;
+	}
+
+	createCell(char = " ", style = "") {
+		return {
+			char,
+			style
+		};
+	}
+
+	createBuffer() {
+		return Array.from(
+			{ length: this.height },
+			() =>
+				Array.from(
+					{ length: this.width },
+					() => this.createCell()
+				)
+		);
+	}
+
+	markDirty() {
+		this.dirty = true;
+	}
+
+	clear(text=" ") {
+		for (let y = 0; y < this.height; y++) {
+			for (let x = 0; x < this.width; x++) {
+				this.buffer[y][x].char = text;
+				this.buffer[y][x].style = "";
+			}
+		}
+
+		this.markDirty();
+	}
+
+	render() {
+		if (!this.dirty || this.renderSuspended) {
+			return;
+		}
+
+		const lines = this.buffer.map(
+			cells => cellsToHTML(cells)
+		);
+
+		this.element.innerHTML = lines.join("\n");
+
+		this.dirty = false;
+	}
+
+	getChar(x, y) {
+		if (
+			x < 0 ||
+			x >= this.width ||
+			y < 0 ||
+			y >= this.height
+		) {
+			return "";
+		}
+
+		return this.buffer[y][x].char;
+	}
+
+	writeCell(x, y, cell) {
+		if (
+			x < 0 ||
+			x >= this.width ||
+			y < 0 ||
+			y >= this.height
+		) {
+			return;
+		}
+
+		const destination = this.buffer[y][x];
+
+		if (
+			destination.char === cell.char &&
+			destination.style === cell.style
+		) {
+			return;
+		}
+
+		destination.char = cell.char;
+		destination.style = cell.style;
+
+		this.markDirty();
+	}
+
+	write(x, y, text, inheritedStyle = "") {
+		const cells = htmlToCells(text, inheritedStyle);
+
+		let sourceIndex = 0;
+		let currentY = y;
+
+		while (
+			sourceIndex < cells.length &&
+			currentY < this.height
+		) {
+			let lineEnd = sourceIndex;
+
+			while (
+				lineEnd < cells.length &&
+				cells[lineEnd].char !== "\n"
+			) {
+				lineEnd++;
+			}
+
+			const sourceStart = Math.max(-x, 0);
+			const destinationStart = Math.max(x, 0);
+
+			const sourceLength = lineEnd - sourceIndex;
+
+			const visibleLength = Math.min(
+				sourceLength - sourceStart,
+				this.width - destinationStart
+			);
+
+			if (visibleLength > 0) {
+				for (let i = 0; i < visibleLength; i++) {
+					this.writeCell(
+						destinationStart + i,
+						currentY,
+						cells[
+						sourceIndex +
+						sourceStart +
+						i
+						]
+					);
+				}
+			}
+
+			if (lineEnd >= cells.length) {
+				break;
+			}
+
+			currentY++;
+			sourceIndex = lineEnd + 1;
+		}
+	}
+
+	drawBox(
+		x,
+		y,
+		width,
+		height,
+		colour = "var(--text-color)"
+	) {
+		if (width < 2 || height < 2) {
+			this.write(x, y, "▯");
+			return;
+		}
+
+		const horizontal = "─".repeat(width - 2);
+		const middle =
+			`│${" ".repeat(width - 2)}│`;
+
+		let text =
+			colourText(
+				`┌${horizontal}┐`,
+				colour
+			) + "\n";
+
+		for (let i = 1; i < height - 1; i++) {
+			text +=
+				colourText(middle, colour) + "\n";
+		}
+
+		text += colourText(
+			`└${horizontal}┘`,
+			colour
+		);
+
+		this.write(x, y, text);
+	}
+
+	drawTextBox(
+		x,
+		y,
+		textContent,
+		colour = "var(--text-color)",
+		padding = 1
+	) {
+		const cells = htmlToCells(textContent);
+
+		const lines = [];
+		let currentLine = [];
+
+		for (const cell of cells) {
+			if (cell.char === "\n") {
+				lines.push(currentLine);
+				currentLine = [];
+			} else {
+				currentLine.push(cell);
+			}
+		}
+
+		lines.push(currentLine);
+
+		const width = Math.max(
+			0,
+			...lines.map(line => line.length)
+		);
+
+		const horizontal =
+			"─".repeat(width + padding * 2);
+
+		let text =
+			colourText(
+				`┌${horizontal}┐`,
+				colour
+			) + "\n";
+
+		for (const line of lines) {
+			text += colourText(
+				`│${" ".repeat(padding)}`,
+				colour
+			);
+
+			text += cellsToHTML(line);
+
+			text += colourText(
+				`${" ".repeat(
+					width - line.length + padding
+				)}│`,
+				colour
+			);
+
+			text += "\n";
+		}
+
+		text += colourText(
+			`└${horizontal}┘`,
+			colour
+		);
+
+		this.write(x, y, text);
+	}
+}
+
+function colourText(text, colour) {
+	return `<span style="color: ${colour};">${text}</span>`;
+}
