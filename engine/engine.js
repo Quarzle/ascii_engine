@@ -1,6 +1,7 @@
 import { Screen } from "./screen.js";
 import { Input } from "./input.js";
 import { AudioManager } from "./audio.js";
+import { Random } from "./random.js";
 
 export class Engine {
 	constructor({
@@ -29,6 +30,8 @@ export class Engine {
 		this.screen = new Screen(this);
 		this.input = new Input(this);
 		this.audio = new AudioManager();
+		this.random = new Random();
+
 
 		this.game = null;
 		this.running = false;
@@ -48,7 +51,7 @@ export class Engine {
 		this.screen.clear();
 		this.input.initialize();
 
-		this.game.setup?.(this);
+		this.game.setup?.();
 
 		this.screen.render();
 
@@ -76,7 +79,6 @@ export class Engine {
 		this.lastTime = time;
 
 		this.game.update?.(
-			this,
 			deltaTime
 		);
 
@@ -89,5 +91,16 @@ export class Engine {
 		);
 	}
 
+}
 
+export function colourText(text, colour) {
+	return `<span style="color: ${colour};">${text}</span>`;
+}
+
+export function boldText(text) {
+	return `<span style="font-weight: bold">${text}</span>`;
+}
+
+export function customText(text, className) {
+	return `<span class="${className}">${text}</span>`;
 }

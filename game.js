@@ -1,15 +1,17 @@
-import { Engine } from "./engine/engine.js";
-import {
+import { Engine,
 	colourText,
 	boldText
-} from "./engine/text.js";
+} from "./engine/engine.js";
 
+// Engine setup
 const engine = new Engine({
 	element: "#mainWindow",
 	width: 87,
 	height: 26,
 	fps: 60
 });
+const input = engine.input;
+const audio = engine.audio;
 
 engine.start({
 	setup: setup,
@@ -17,7 +19,7 @@ engine.start({
 });
 
 
-
+// ---Game code-----
 let playerX = 40;
 let playerY = 12;
 
@@ -26,62 +28,61 @@ const moveCooldownTime = [0.1, 0.15] //in seconds
 
 
 
-
-function setup(game) {
-	game.audio.preload({
+function setup() {
+	audio.preload({
 		ding: "audio/ding.mp3"
 	});
 
 }
 
-function update(game, deltaTime) {
-	game.screen.clear("-");
+function update(deltaTime) {
+	engine.screen.clear("-");
 
-	game.screen.drawTextBox(
+	engine.screen.drawTextBox(
 		5,
 		3,
 		"Welcome to my game!"
 	);
 
-	movement(game, deltaTime);
+	movement(deltaTime);
 
-	if (game.input.justPressed("Space")) {
-		game.audio.play("ding", 1, 0.9);
+	if (input.justPressed("Space")) {
+		audio.play("ding", 1, engine.random.float(0.5, 1.5));
 	}
 
-	game.screen.write(
+	engine.screen.write(
 		playerX,
 		playerY,
 		colourText("O", "red")
 	);
 }
 
-function movement(game, deltaTime) {
+function movement(deltaTime) {
 	moveCooldown[0] -= deltaTime;
 	moveCooldown[1] -= deltaTime;
 
-	if (game.input.isPressed("KeyA")) {
+	if (input.isPressed("KeyA")) {
 		if (moveCooldown[0] < 0) {
 			playerX -= 1;
 			moveCooldown[0] = moveCooldownTime[0];
 		}
 	}
 
-	if (game.input.isPressed("KeyD")) {
+	if (input.isPressed("KeyD")) {
 		if (moveCooldown[0] < 0) {
 			playerX += 1;
 			moveCooldown[0] = moveCooldownTime[0];
 		}
 	}
 
-	if (game.input.isPressed("KeyW")) {
+	if (input.isPressed("KeyW")) {
 		if (moveCooldown[1] < 0) {
 			playerY -= 1;
 			moveCooldown[1] = moveCooldownTime[1];
 		}
 	}
 
-	if (game.input.isPressed("KeyS")) {
+	if (input.isPressed("KeyS")) {
 		if (moveCooldown[1] < 0) {
 			playerY += 1;
 			moveCooldown[1] = moveCooldownTime[1];
