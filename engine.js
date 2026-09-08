@@ -302,7 +302,7 @@ function getChar(x, y) {
 	) {
 		return "";
 	}
-	
+
 	return screen[y][x].char;
 }
 
@@ -454,10 +454,10 @@ function drawTextBox(
 function drawBox(x, y, width, height, colour="var(--text-color)") {
 	if (width < 2 || height < 2) {
 		insertText(x, y, "▯");
-		return; //TODO: maybe replace this with box char?
+		return;
 	}
 
-	finalText = "";
+	let finalText = "";
 
 	const horizontal =
 		"─".repeat(width - 2);
@@ -492,7 +492,7 @@ function boldText(text) {
 }
 
 function customText(text, className) {
-	return `<span class=${className}">${text}</span>`;
+	return `<span class="${className}">${text}</span>`;
 }
 
 // ===================
