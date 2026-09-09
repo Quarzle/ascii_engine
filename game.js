@@ -4,11 +4,14 @@ import {
 	boldText
 } from "./engine/engine.js";
 
+const WIDTH = 87;
+const HEIGHT = 26;
+
 // Engine setup
 const engine = new Engine({
 	element: "#mainWindow",
-	width: 87,
-	height: 26,
+	width: WIDTH,
+	height: HEIGHT,
 	fps: 60
 });
 const input = engine.input;
@@ -21,10 +24,12 @@ engine.start({
 
 
 // ---Game code-----
-let gameState = "menu";
+// let gameState = "menu";
 
-let playerX = 5;
-let playerY = 16;
+let currentMap = "demo";
+
+let playerX = 45;
+let playerY = 14;
 
 let moveCooldown = [0, 0];
 const moveCooldownTime = [0.1, 0.15] //in seconds
@@ -38,58 +43,40 @@ function setup() {
 
 
 function update(deltaTime) {
-	engine.screen.clear(" ");
-
-	engine.screen.drawTextBox(
-		5,
-		3,
-		"Welcome to my game!",
-		{
-			borderColour: "yellow",
-			border: "rounded",
-		}
-	);
-
-	engine.screen.drawBox(
-		60,
-		17,
-		20,
-		5,
-		{
-			borderColour: "cyan",
-			border: "double",
-			fill: "."
-		}
-	);
-
-	engine.screen.drawBox(
-		50,
-		14,
-		20,
-		7,
-		{
-			borderColour: "green",
-			fill: "\u0000" // Transparent fill
-		}
-	);
-
-	engine.screen.insertText(
-		4,
-		14,
-		maze
-	);
-
+	engine.screen.clear(".");
 
 	movement(deltaTime);
 
-	if (input.justPressed("Space")) {
-		audio.play("ding", 1, engine.random.float(0.6, 1.4));
-	}
+	drawBackground();
 
+	// Draw player
 	engine.screen.insertText(
 		playerX,
 		playerY,
 		colourText("▲", "red")
+	);
+}
+
+
+function drawBackground() {
+	const title = "Ascii game demo!";
+
+
+	engine.screen.drawTextBox(
+		Math.round(WIDTH/2 - (title.length/2 + 2)), //one char of padding and one of border
+		2,
+		title,
+		{
+			borderColour: "#d70000",
+			border: "rounded",
+		}
+	);
+
+
+	engine.screen.insertText(		
+		Math.round(WIDTH/2 - getDimensions(currentMap).x/2),
+		6,
+		maps[currentMap].display
 	);
 }
 
@@ -103,7 +90,7 @@ function movement(deltaTime) {
 
 		moveCooldown[0] = moveCooldownTime[0];
 
-		if (testPlayerCollision(playerX, playerY, collisionMap, 4, 14)) {
+		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, Math.round(WIDTH/2 - getDimensions(currentMap).x/2), 6)) {
 			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
 			moveCooldown[0] = 0;
 		}
@@ -113,12 +100,13 @@ function movement(deltaTime) {
 		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
 		moveCooldown[1] = moveCooldownTime[1];
 
-		if (testPlayerCollision(playerX, playerY, collisionMap, 4, 14)) {
+		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, Math.round(WIDTH/2 - getDimensions(currentMap).x/2), 6)) {
 			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
 			moveCooldown[1] = 0;
 		}
 	}
 
+	// Teleport to the mouse on click
 	if (input.justPressed("mouse0")) {
 		playerX = input.getMousePosition().x;
 		playerY = input.getMousePosition().y;
@@ -133,41 +121,8 @@ function testPlayerCollision(x, y, collisionMap, mapOffsetX = 0, mapOffsetY = 0,
 	if (x - mapOffsetX < 0 || x - mapOffsetX >= mapArray[y - mapOffsetY].length) return false;
 
 	if (mapArray[y - mapOffsetY][x - mapOffsetX] == collisionChar) {
-		
+
 		return true;
 	};
 	return false;
 }
-
-
-const collisionMap =
-	`###########  ##    #######
-#      #      ######     #
-#             #    #     #
-##  ############ #### #
-#                     ####
-#######################
-`
-
-const maze =
-	`╭──────┬───  ─╮    ┌─────┐
-│      |      ├────┤     │
-│             │    │     │
-├─  ──────────┼╴ ╶─┴╴ │
-│                     ├──╯
-└─────────────┴───────┘`
-
-/*
-╔╗╦╬
-║╠╣
-╚╝╩═
-┌┐┬┼╷
-│├┤╶╴
-└┘┴─╵
-╭╮
-╰╯
-╱╲╳
-█ ▓▒░
-
-
-*/
