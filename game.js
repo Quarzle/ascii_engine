@@ -36,8 +36,8 @@ let mapOffset = {
 let playerX = 45;
 let playerY = 14;
 
-let moveCooldown = [0, 0];
-const moveCooldownTime = [0.1, 0.15] //in seconds
+let moveCooldown = {x: 0, y: 0};
+const moveCooldownTime = {x: 0.1, y: 0.15}; // in seconds
 
 let signs = [
 	{
@@ -105,7 +105,7 @@ function drawBackground() {
 			sign.y,
 			colourText("!", "yellow")
 		);
-		if (sign.x == playerX && sign.y == playerY) {
+		if (sign.x === playerX && sign.y === playerY) {
 			onSign = true;
 			if (!playedSignSound) {
 				audio.play("ding", 0.5, engine.random.float(0.9, 1.1));
@@ -128,27 +128,27 @@ function drawBackground() {
 
 
 function movement(deltaTime) {
-	moveCooldown[0] -= deltaTime;
-	moveCooldown[1] -= deltaTime;
+	moveCooldown.x -= deltaTime;
+	moveCooldown.y -= deltaTime;
 
-	if (moveCooldown[0] < 0) {
+	if (moveCooldown.x < 0) {
 		playerX -= (input.isPressed("KeyA") - input.isPressed("KeyD"));
 
-		moveCooldown[0] = moveCooldownTime[0];
+		moveCooldown.x = moveCooldownTime.x;
 
 		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
-			moveCooldown[0] = 0;
+			moveCooldown.x = 0;
 		}
 	}
 
-	if (moveCooldown[1] < 0) {
+	if (moveCooldown.y < 0) {
 		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
-		moveCooldown[1] = moveCooldownTime[1];
+		moveCooldown.y = moveCooldownTime.y;
 
 		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
-			moveCooldown[1] = 0;
+			moveCooldown.y = 0;
 		}
 	}
 
@@ -166,7 +166,7 @@ function testPlayerCollision(x, y, collisionMap, mapOffsetX = 0, mapOffsetY = 0,
 	if (y - mapOffsetY < 0 || y - mapOffsetY >= mapArray.length) return false;
 	if (x - mapOffsetX < 0 || x - mapOffsetX >= mapArray[y - mapOffsetY].length) return false;
 
-	if (mapArray[y - mapOffsetY][x - mapOffsetX] == collisionChar) {
+	if (mapArray[y - mapOffsetY][x - mapOffsetX] === collisionChar) {
 
 		return true;
 	};
