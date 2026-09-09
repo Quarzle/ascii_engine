@@ -75,6 +75,7 @@ function update(deltaTime) {
 	);
 }
 
+let playedSignSound = false;
 
 function drawBackground() {
 	const title = "Ascii game demo!";
@@ -96,6 +97,8 @@ function drawBackground() {
 	);
 
 	// signs
+	let onSign = false;
+
 	for (const sign of signs) {
 		screen.insertText(
 			sign.x,
@@ -103,6 +106,11 @@ function drawBackground() {
 			colourText("!", "yellow")
 		);
 		if (sign.x == playerX && sign.y == playerY) {
+			onSign = true;
+			if (!playedSignSound) {
+				audio.play("ding", 0.5, engine.random.float(0.9, 1.1));
+				playedSignSound = true;
+			}
 			screen.drawTextBox(
 				Math.round(WIDTH / 2 - (sign.message.length / 2 + 2)),
 				22,
@@ -112,6 +120,9 @@ function drawBackground() {
 				}
 			);
 		}
+	}
+	if (!onSign) {
+		playedSignSound = false;
 	}
 }
 
