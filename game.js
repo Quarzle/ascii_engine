@@ -23,8 +23,8 @@ engine.start({
 // ---Game code-----
 let gameState = "menu";
 
-let playerX = 40;
-let playerY = 12;
+let playerX = 5;
+let playerY = 16;
 
 let moveCooldown = [0, 0];
 const moveCooldownTime = [0.1, 0.15] //in seconds
@@ -34,7 +34,6 @@ function setup() {
 	audio.preload({
 		ding: "audio/ding.mp3"
 	});
-
 }
 
 
@@ -104,8 +103,7 @@ function movement(deltaTime) {
 
 		moveCooldown[0] = moveCooldownTime[0];
 
-		// Collision with any other tile
-		if (engine.screen.getScreenText(playerX, playerY) != " ") {
+		if (testPlayerCollision(playerX, playerY, collisionMap, 4, 14)) {
 			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
 			moveCooldown[0] = 0;
 		}
@@ -115,7 +113,7 @@ function movement(deltaTime) {
 		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
 		moveCooldown[1] = moveCooldownTime[1];
 
-		if (engine.screen.getScreenText(playerX, playerY) != " ") {
+		if (testPlayerCollision(playerX, playerY, collisionMap, 4, 14)) {
 			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
 			moveCooldown[1] = 0;
 		}
@@ -128,9 +126,31 @@ function movement(deltaTime) {
 }
 
 
+function testPlayerCollision(x, y, collisionMap, mapOffsetX = 0, mapOffsetY = 0, collisionChar = "#") {
+	let mapArray = collisionMap.split("\n");
+
+	if (y - mapOffsetY < 0 || y - mapOffsetY >= mapArray.length) return false;
+	if (x - mapOffsetX < 0 || x - mapOffsetX >= mapArray[y - mapOffsetY].length) return false;
+
+	if (mapArray[y - mapOffsetY][x - mapOffsetX] == collisionChar) {
+		
+		return true;
+	};
+	return false;
+}
+
+
+const collisionMap =
+	`###########  ##    #######
+#      #      ######     #
+#             #    #     #
+##  ############ #### #
+#                     ####
+#######################
+`
+
 const maze =
-	`
-╭──────┬───  ─╮    ┌─────┐
+	`╭──────┬───  ─╮    ┌─────┐
 │      |      ├────┤     │
 │             │    │     │
 ├─  ──────────┼╴ ╶─┴╴ │
