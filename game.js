@@ -39,6 +39,19 @@ let playerY = 14;
 let moveCooldown = [0, 0];
 const moveCooldownTime = [0.1, 0.15] //in seconds
 
+let signs = [
+	{
+		x: 50,
+		y: 15,
+		message: "This is a sign"
+	},
+	{
+		x: 22,
+		y: 10,
+		message: "You are inside!"
+	}
+];
+
 
 function setup() {
 	audio.preload({
@@ -81,6 +94,25 @@ function drawBackground() {
 		mapOffset.y,
 		maps[currentMap].display
 	);
+
+	// signs
+	for (const sign of signs) {
+		screen.insertText(
+			sign.x,
+			sign.y,
+			colourText("!", "yellow")
+		);
+		if (sign.x == playerX && sign.y == playerY) {
+			screen.drawTextBox(
+				Math.round(WIDTH / 2 - (sign.message.length / 2 + 2)),
+				22,
+				sign.message,
+				{
+					borderColour: "#d7af00"
+				}
+			);
+		}
+	}
 }
 
 
