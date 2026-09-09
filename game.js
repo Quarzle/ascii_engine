@@ -45,6 +45,10 @@ function update(deltaTime) {
 		5,
 		3,
 		"Welcome to my game!",
+		{
+			borderColour: "yellow",
+			border: "rounded",
+		}
 	);
 
 	engine.screen.drawBox(
@@ -52,7 +56,22 @@ function update(deltaTime) {
 		17,
 		20,
 		5,
-		"pink"
+		{
+			borderColour: "cyan",
+			border: "double",
+			fill: "."
+		}
+	);
+
+	engine.screen.drawBox(
+		50,
+		14,
+		20,
+		7,
+		{
+			borderColour: "green",
+			fill: "\u0000" // Transparent fill
+		}
 	);
 
 	engine.screen.insertText(
@@ -101,17 +120,22 @@ function movement(deltaTime) {
 			moveCooldown[1] = 0;
 		}
 	}
+
+	if (input.justPressed("mouse0")) {
+		playerX = input.getMousePosition().x;
+		playerY = input.getMousePosition().y;
+	}
 }
 
 
-const maze = 
-`
-╭──────┬───  ─╮
-│      |      │
-│             │
-├─  ──────────┤
-│             
-└─────────────┘`
+const maze =
+	`
+╭──────┬───  ─╮    ┌─────┐
+│      |      ├────┤     │
+│             │    │     │
+├─  ──────────┼╴ ╶─┴╴ │
+│                     ├──╯
+└─────────────┴───────┘`
 
 /*
 ╔╗╦╬
@@ -124,4 +148,6 @@ const maze =
 ╰╯
 ╱╲╳
 █ ▓▒░
+
+
 */

@@ -1,10 +1,19 @@
+const TRANSPARENT_CHAR = "\u0000";
+
 export class Screen {
 	constructor(engine) {
-		this.engine = engine;
+		if (!engine) {
+			throw new TypeError("Screen requires an engine.");
+		}
 
-		this.width = engine.width;
-		this.height = engine.height;
+		this.engine = engine;
+		this.width = Math.max(0, Number(engine.width) || 0);
+		this.height = Math.max(0, Number(engine.height) || 0);
 		this.element = engine.element;
+
+		if (!this.element) {
+			throw new TypeError("Screen requires an engine.element.");
+		}
 
 		this.buffer = this.createBuffer();
 
@@ -14,8 +23,8 @@ export class Screen {
 
 	createCell(char = " ", style = "") {
 		return {
-			char,
-			style
+			char: firstCharacter(char),
+			style: String(style)
 		};
 	}
 
@@ -30,14 +39,64 @@ export class Screen {
 		);
 	}
 
+	resize(width, height) {
+		width = Math.max(0, Number(width) || 0);
+		height = Math.max(0, Number(height) || 0);
+
+		if (width === this.width && height === this.height) {
+			return;
+		}
+
+		const oldBuffer = this.buffer;
+
+		this.width = width;
+		this.height = height;
+		this.buffer = this.createBuffer();
+
+		const copyHeight = Math.min(
+			height,
+			oldBuffer.length
+		);
+
+		for (let y = 0; y < copyHeight; y++) {
+			const copyWidth = Math.min(
+				width,
+				oldBuffer[y].length
+			);
+
+			for (let x = 0; x < copyWidth; x++) {
+				this.buffer[y][x] = {
+					char: oldBuffer[y][x].char,
+					style: oldBuffer[y][x].style
+				};
+			}
+		}
+
+		this.markDirty();
+	}
+
 	markDirty() {
 		this.dirty = true;
 	}
 
-	clear(text = " ") {
+	suspendRender() {
+		this.renderSuspended = true;
+	}
+
+	resumeRender(render = true) {
+		this.renderSuspended = false;
+
+		if (render) {
+			this.render();
+		}
+	}
+
+	clear(char = " ") {
+		char = firstCharacter(char);
+
 		for (let y = 0; y < this.height; y++) {
 			for (let x = 0; x < this.width; x++) {
-				this.buffer[y][x].char = text;
+				this.buffer[y][x].char = char;
 				this.buffer[y][x].style = "";
 			}
 		}
@@ -60,6 +119,11 @@ export class Screen {
 	}
 
 	getScreenText(x, y, width = 1, height = 1) {
+		x = Math.trunc(x);
+		y = Math.trunc(y);
+		width = Math.trunc(width);
+		height = Math.trunc(height);
+
 		if (width < 1 || height < 1) {
 			return "";
 		}
@@ -73,50 +137,105 @@ export class Screen {
 			return "";
 		}
 
-		if (width == 1 && height == 1) {
-			return this.buffer[y][x].char;
-		} else {
-			let result = "";
-			for (let j = 0; j < height; j++) {
-				for (let i = 0; i < width; i++) {
-					result += this.getScreenText(
-						x + i,
-						y + j
-					);
-				}
+		const endX = Math.min(
+			x + width,
+			this.width
+		);
+
+		const endY = Math.min(
+			y + height,
+			this.height
+		);
+
+		let result = "";
+
+		for (let currentY = y; currentY < endY; currentY++) {
+			for (
+				let currentX = x;
+				currentX < endX;
+				currentX++
+			) {
+				result +=
+					this.buffer[currentY][currentX].char;
+			}
+
+			if (currentY < endY - 1) {
 				result += "\n";
 			}
-			return result;
 		}
+
+		return result;
 	}
 
 	writeCell(x, y, cell) {
+		x = Math.trunc(x);
+		y = Math.trunc(y);
+
 		if (
 			x < 0 ||
 			x >= this.width ||
 			y < 0 ||
 			y >= this.height
 		) {
-			return;
+			return false;
 		}
+
+		if (!cell) {
+			return false;
+		}
+
+		const char = firstCharacter(cell.char);
+
+		/*
+		 * Null is the transparent character.
+		 *
+		 * A transparent cell does not modify the destination
+		 * cell at all, including its existing style.
+		 */
+		if (char === TRANSPARENT_CHAR) {
+			return false;
+		}
+
+		const style = String(cell.style ?? "");
 
 		const destination = this.buffer[y][x];
 
 		if (
-			destination.char === cell.char &&
-			destination.style === cell.style
+			destination.char === char &&
+			destination.style === style
+		) {
+			return false;
+		}
+
+		destination.char = char;
+		destination.style = style;
+
+		this.markDirty();
+
+		return true;
+	}
+
+	insertText(
+		x,
+		y,
+		text,
+		inheritedStyle = ""
+	) {
+		x = Math.trunc(x);
+		y = Math.trunc(y);
+
+		if (
+			!text ||
+			y >= this.height ||
+			x >= this.width
 		) {
 			return;
 		}
 
-		destination.char = cell.char;
-		destination.style = cell.style;
-
-		this.markDirty();
-	}
-
-	insertText(x, y, text, inheritedStyle = "") {
-		const cells = htmlToCells(text, inheritedStyle);
+		const cells = htmlToCells(
+			String(text),
+			inheritedStyle
+		);
 
 		let sourceIndex = 0;
 		let currentY = y;
@@ -125,6 +244,22 @@ export class Screen {
 			sourceIndex < cells.length &&
 			currentY < this.height
 		) {
+			if (currentY < 0) {
+				while (
+					sourceIndex < cells.length &&
+					cells[sourceIndex].char !== "\n"
+				) {
+					sourceIndex++;
+				}
+
+				if (sourceIndex < cells.length) {
+					sourceIndex++;
+					currentY++;
+				}
+
+				continue;
+			}
+
 			let lineEnd = sourceIndex;
 
 			while (
@@ -134,36 +269,45 @@ export class Screen {
 				lineEnd++;
 			}
 
-			const sourceStart = Math.max(-x, 0);
-			const destinationStart = Math.max(x, 0);
+			const sourceStart = Math.max(0, -x);
+			const destinationStart = Math.max(0, x);
 
-			const sourceLength = lineEnd - sourceIndex;
+			const sourceLength =
+				lineEnd - sourceIndex;
 
-			const visibleLength = Math.min(
-				sourceLength - sourceStart,
+			const availableSource = Math.max(
+				0,
+				sourceLength - sourceStart
+			);
+
+			const availableDestination = Math.max(
+				0,
 				this.width - destinationStart
 			);
 
-			if (visibleLength > 0) {
-				for (let i = 0; i < visibleLength; i++) {
-					this.writeCell(
-						destinationStart + i,
-						currentY,
-						cells[
+			const visibleLength = Math.min(
+				availableSource,
+				availableDestination
+			);
+
+			for (let i = 0; i < visibleLength; i++) {
+				this.writeCell(
+					destinationStart + i,
+					currentY,
+					cells[
 						sourceIndex +
 						sourceStart +
 						i
-						]
-					);
-				}
+					]
+				);
 			}
 
 			if (lineEnd >= cells.length) {
 				break;
 			}
 
-			currentY++;
 			sourceIndex = lineEnd + 1;
+			currentY++;
 		}
 	}
 
@@ -172,45 +316,131 @@ export class Screen {
 		y,
 		width,
 		height,
-		colour = "var(--text-color)"
+		options = {}
 	) {
-		if (width < 2 || height < 2) {
-			this.insertText(x, y, "▯");
+		const {
+			fill = " ",
+			borderColour = "var(--text-color)",
+			border = "single"
+		} = options;
+
+		x = Math.trunc(x);
+		y = Math.trunc(y);
+		width = Math.trunc(width);
+		height = Math.trunc(height);
+
+		if (width < 1 || height < 1) {
 			return;
 		}
 
-		const horizontal = "─".repeat(width - 2);
-		const middle =
-			`│${" ".repeat(width - 2)}│`;
+		const fillCharacter = firstCharacter(fill);
+		const borders = getBorder(border);
+		const borderStyle = `color: ${borderColour}`;
 
-		let text =
-			colourText(
-				`┌${horizontal}┐`,
-				colour
-			) + "\n";
+		if (width === 1 && height === 1) {
+			this.writeCell(x, y, {
+				char: fillCharacter,
+				style: ""
+			});
 
-		for (let i = 1; i < height - 1; i++) {
-			text +=
-				colourText(middle, colour) + "\n";
+			return;
 		}
 
-		text += colourText(
-			`└${horizontal}┘`,
-			colour
-		);
+		// Top border.
+		this.writeCell(x, y, {
+			char: borders.topLeft,
+			style: borderStyle
+		});
 
-		this.insertText(x, y, text);
+		for (let col = 1; col < width - 1; col++) {
+			this.writeCell(x + col, y, {
+				char: borders.horizontal,
+				style: borderStyle
+			});
+		}
+
+		this.writeCell(x + width - 1, y, {
+			char: borders.topRight,
+			style: borderStyle
+		});
+
+		// Middle.
+		for (let row = 1; row < height - 1; row++) {
+			this.writeCell(x, y + row, {
+				char: borders.vertical,
+				style: borderStyle
+			});
+
+			for (let col = 1; col < width - 1; col++) {
+				this.writeCell(x + col, y + row, {
+					char: fillCharacter,
+					style: ""
+				});
+			}
+
+			this.writeCell(
+				x + width - 1,
+				y + row,
+				{
+					char: borders.vertical,
+					style: borderStyle
+				}
+			);
+		}
+
+		// Bottom border.
+		if (height > 1) {
+			this.writeCell(
+				x,
+				y + height - 1,
+				{
+					char: borders.bottomLeft,
+					style: borderStyle
+				}
+			);
+
+			for (let col = 1; col < width - 1; col++) {
+				this.writeCell(
+					x + col,
+					y + height - 1,
+					{
+						char: borders.horizontal,
+						style: borderStyle
+					}
+				);
+			}
+
+			this.writeCell(
+				x + width - 1,
+				y + height - 1,
+				{
+					char: borders.bottomRight,
+					style: borderStyle
+				}
+			);
+		}
 	}
 
 	drawTextBox(
 		x,
 		y,
 		textContent,
-		colour = "var(--text-color)",
-		padding = 1,
-		style = 1
+		options = {}
 	) {
-		const cells = htmlToCells(textContent);
+		let {
+			borderColour = "var(--text-color)",
+			border = "single",
+			padding = 1,
+			fill = " "
+		} = options;
+
+		x = Math.trunc(x);
+		y = Math.trunc(y);
+		padding = Math.max(0, Math.trunc(padding));
+
+		const cells = htmlToCells(
+			String(textContent)
+		);
 
 		const lines = [];
 		let currentLine = [];
@@ -226,101 +456,243 @@ export class Screen {
 
 		lines.push(currentLine);
 
-		const width = Math.max(
+		const contentWidth = Math.max(
 			0,
 			...lines.map(line => line.length)
 		);
 
-		const horizontal =
-			"─".repeat(width + padding * 2);
+		const innerWidth =
+			contentWidth +
+			padding * 2;
 
-		let text;
-		if (style === 2) {
-			text = colourText(
-				`╭${horizontal}╮`,
-				colour
-			) + "\n";
-		} else if (style === 3) {
-			text = colourText(
-				`╔${horizontal}╗`,
-				colour
-			) + "\n";
-		} else {
-			text = colourText(
-				`┌${horizontal}┐`,
-				colour
-			) + "\n";
+		const totalWidth =
+			innerWidth + 2;
+
+		const totalHeight =
+			lines.length + 2;
+
+		const borders = getBorder(border);
+		const borderStyle =
+			`color: ${borderColour}`;
+
+		const fillCharacter =
+			firstCharacter(fill);
+
+		// Top border.
+		this.writeCell(x, y, {
+			char: borders.topLeft,
+			style: borderStyle
+		});
+
+		for (let col = 0; col < innerWidth; col++) {
+			this.writeCell(
+				x + col + 1,
+				y,
+				{
+					char: borders.horizontal,
+					style: borderStyle
+				}
+			);
 		}
 
+		this.writeCell(
+			x + totalWidth - 1,
+			y,
+			{
+				char: borders.topRight,
+				style: borderStyle
+			}
+		);
 
-		for (const line of lines) {
-			if (style === 3) {
-				text += colourText(
-					`║${" ".repeat(padding)}`,
-					colour
-				);
-			} else {
-				text += colourText(
-					`│${" ".repeat(padding)}`,
-					colour
+		// Content.
+		for (let row = 0; row < lines.length; row++) {
+			const line = lines[row];
+			const screenY = y + row + 1;
+
+			this.writeCell(x, screenY, {
+				char: borders.vertical,
+				style: borderStyle
+			});
+
+			// Left padding.
+			for (let i = 0; i < padding; i++) {
+				this.writeCell(
+					x + 1 + i,
+					screenY,
+					{
+						char: fillCharacter,
+						style: ""
+					}
 				);
 			}
 
+			// Text.
+			for (let i = 0; i < line.length; i++) {
+				this.writeCell(
+					x + 1 + padding + i,
+					screenY,
+					line[i]
+				);
+			}
 
-			text += cellsToHTML(line);
+			// Right padding / remaining space.
+			for (
+				let i = line.length;
+				i < contentWidth + padding;
+				i++
+			) {
+				this.writeCell(
+					x + 1 + padding + i,
+					screenY,
+					{
+						char: fillCharacter,
+						style: ""
+					}
+				);
+			}
 
-			text += colourText(
-				`${" ".repeat(
-					width - line.length + padding
-				)}│`,
-				colour
+			this.writeCell(
+				x + totalWidth - 1,
+				screenY,
+				{
+					char: borders.vertical,
+					style: borderStyle
+				}
 			);
-
-			text += "\n";
 		}
 
-		text += colourText(
-			`└${horizontal}┘`,
-			colour
-		);
+		// Bottom border.
+		const bottomY =
+			y + totalHeight - 1;
 
-		this.insertText(x, y, text);
+		this.writeCell(x, bottomY, {
+			char: borders.bottomLeft,
+			style: borderStyle
+		});
+
+		for (let col = 0; col < innerWidth; col++) {
+			this.writeCell(
+				x + col + 1,
+				bottomY,
+				{
+					char: borders.horizontal,
+					style: borderStyle
+				}
+			);
+		}
+
+		this.writeCell(
+			x + totalWidth - 1,
+			bottomY,
+			{
+				char: borders.bottomRight,
+				style: borderStyle
+			}
+		);
 	}
 }
 
-function colourText(text, colour) {
-	return `<span style="color: ${colour};">${text}</span>`;
+function getBorder(border) {
+	switch (border) {
+		case "rounded":
+			return {
+				topLeft: "╭",
+				topRight: "╮",
+				bottomLeft: "╰",
+				bottomRight: "╯",
+				horizontal: "─",
+				vertical: "│"
+			};
+
+		case "double":
+			return {
+				topLeft: "╔",
+				topRight: "╗",
+				bottomLeft: "╚",
+				bottomRight: "╝",
+				horizontal: "═",
+				vertical: "║"
+			};
+
+		case "single":
+		default:
+			return {
+				topLeft: "┌",
+				topRight: "┐",
+				bottomLeft: "└",
+				bottomRight: "┘",
+				horizontal: "─",
+				vertical: "│"
+			};
+	}
+}
+
+function firstCharacter(value) {
+	const characters = Array.from(
+		String(value ?? "")
+	);
+
+	return characters.length > 0
+		? characters[0]
+		: " ";
 }
 
 function htmlToCells(
 	html,
 	inheritedStyle = ""
 ) {
+	html = String(html ?? "");
+	inheritedStyle =
+		String(inheritedStyle ?? "");
+
 	if (!html.includes("<")) {
-		return Array.from(html, char => ({
-			char,
-			style: inheritedStyle
-		}));
+		return Array.from(
+			html,
+			char => ({
+				char,
+				style: inheritedStyle
+			})
+		);
 	}
 
-	const container = document.createElement("div");
+	const container =
+		document.createElement("div");
+
 	container.innerHTML = html;
 
 	const cells = [];
 
+	function pushText(text, style) {
+		if (!text) {
+			return;
+		}
+
+		for (const char of text) {
+			cells.push({
+				char,
+				style
+			});
+		}
+	}
+
 	function walk(node, style) {
 		if (node.nodeType === Node.TEXT_NODE) {
-			for (const char of node.nodeValue) {
-				cells.push({
-					char,
-					style
-				});
-			}
-
+			pushText(node.nodeValue, style);
 			return;
 		}
 
 		if (node.nodeType !== Node.ELEMENT_NODE) {
+			return;
+		}
+
+		if (
+			node.tagName.toLowerCase() === "br"
+		) {
+			cells.push({
+				char: "\n",
+				style
+			});
+
 			return;
 		}
 
@@ -345,7 +717,13 @@ function htmlToCells(
 	return cells;
 }
 
-function concatStyles(parentStyle, childStyle) {
+function concatStyles(
+	parentStyle,
+	childStyle
+) {
+	parentStyle = String(parentStyle ?? "");
+	childStyle = String(childStyle ?? "");
+
 	if (!parentStyle) {
 		return childStyle;
 	}
@@ -355,6 +733,15 @@ function concatStyles(parentStyle, childStyle) {
 	}
 
 	return `${parentStyle};${childStyle}`;
+}
+
+function escapeHTML(text) {
+	return String(text)
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
 }
 
 function cellsToHTML(cells) {
@@ -367,15 +754,11 @@ function cellsToHTML(cells) {
 			return;
 		}
 
-		const escaped = text
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;")
-			.replace(/"/g, "&quot;");
+		const escaped = escapeHTML(text);
 
 		if (currentStyle) {
 			html +=
-				`<span style="${currentStyle}">` +
+				`<span style="${escapeHTML(currentStyle)}">` +
 				`${escaped}</span>`;
 		} else {
 			html += escaped;
@@ -385,12 +768,14 @@ function cellsToHTML(cells) {
 	}
 
 	for (const cell of cells) {
-		if (cell.style !== currentStyle) {
+		const style = String(cell.style ?? "");
+
+		if (style !== currentStyle) {
 			flush();
-			currentStyle = cell.style;
+			currentStyle = style;
 		}
 
-		text += cell.char;
+		text += firstCharacter(cell.char);
 	}
 
 	flush();
