@@ -14,8 +14,8 @@ const engine = new Engine({
 	height: HEIGHT,
 	fps: 60
 });
-const input = engine.input;
-const audio = engine.audio;
+
+const { input, audio, screen } = engine;
 
 engine.start({
 	setup: setup,
@@ -27,6 +27,11 @@ engine.start({
 // let gameState = "menu";
 
 let currentMap = "demo";
+
+let mapOffset = {
+	x: Math.round(WIDTH / 2 - getDimensions(currentMap).x / 2),
+	y: 6
+};
 
 let playerX = 45;
 let playerY = 14;
@@ -43,14 +48,14 @@ function setup() {
 
 
 function update(deltaTime) {
-	engine.screen.clear(".");
+	screen.clear(".");
 
 	movement(deltaTime);
 
 	drawBackground();
 
 	// Draw player
-	engine.screen.insertText(
+	screen.insertText(
 		playerX,
 		playerY,
 		colourText("▲", "red")
@@ -61,9 +66,8 @@ function update(deltaTime) {
 function drawBackground() {
 	const title = "Ascii game demo!";
 
-
-	engine.screen.drawTextBox(
-		Math.round(WIDTH/2 - (title.length/2 + 2)), //one char of padding and one of border
+	screen.drawTextBox(
+		Math.round(WIDTH / 2 - (title.length / 2 + 2)), //one char of padding and one of border
 		2,
 		title,
 		{
@@ -72,10 +76,9 @@ function drawBackground() {
 		}
 	);
 
-
-	engine.screen.insertText(		
-		Math.round(WIDTH/2 - getDimensions(currentMap).x/2),
-		6,
+	screen.insertText(
+		mapOffset.x,
+		mapOffset.y,
 		maps[currentMap].display
 	);
 }
@@ -90,7 +93,7 @@ function movement(deltaTime) {
 
 		moveCooldown[0] = moveCooldownTime[0];
 
-		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, Math.round(WIDTH/2 - getDimensions(currentMap).x/2), 6)) {
+		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
 			moveCooldown[0] = 0;
 		}
@@ -100,7 +103,7 @@ function movement(deltaTime) {
 		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
 		moveCooldown[1] = moveCooldownTime[1];
 
-		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, Math.round(WIDTH/2 - getDimensions(currentMap).x/2), 6)) {
+		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
 			moveCooldown[1] = 0;
 		}
