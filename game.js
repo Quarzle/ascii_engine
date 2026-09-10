@@ -17,12 +17,6 @@ const engine = new Engine({
 
 const { input, audio, screen } = engine;
 
-engine.start({
-	setup: setup,
-	update: update
-});
-
-
 // ---Game code-----
 // let gameState = "menu";
 
@@ -33,11 +27,11 @@ let mapOffset = {
 	y: 6
 };
 
-let playerX = 45;
-let playerY = 14;
+let playerX = 0;
+let playerY = 0;
 
-let moveCooldown = {x: 0, y: 0};
-const moveCooldownTime = {x: 0.1, y: 0.15}; // in seconds
+let moveCooldown = { x: 0, y: 0 };
+const moveCooldownTime = { x: 0.1, y: 0.15 }; // in seconds
 
 let signs = [
 	{
@@ -52,11 +46,30 @@ let signs = [
 	}
 ];
 
+function switchMap(nextMap, spawnLocation) {
+	currentMap = nextMap
+	mapOffset = {
+		x: Math.round(WIDTH / 2 - getDimensions(currentMap).x / 2),
+		y: 6
+	};	
+
+	let pos = findFirst(spawnToChar(maps[currentMap].collisions, spawnLocation), maps[currentMap].collisions.tiles);
+	playerX = pos.x + mapOffset.x;
+	playerY = pos.y + mapOffset.y;
+}
+
+// this is down here so that variables are defined before setup is called
+engine.start({
+	setup: setup,
+	update: update
+});
 
 function setup() {
 	audio.preload({
 		ding: "audio/ding.mp3"
 	});
+
+	switchMap("demo", "central")
 }
 
 
@@ -96,34 +109,7 @@ function drawBackground() {
 		maps[currentMap].display
 	);
 
-	// signs
-	let onSign = false;
-
-	for (const sign of signs) {
-		screen.insertText(
-			sign.x,
-			sign.y,
-			colourText("!", "yellow")
-		);
-		if (sign.x === playerX && sign.y === playerY) {
-			onSign = true;
-			if (!playedSignSound) {
-				audio.play("ding", 0.5, engine.random.float(0.9, 1.1));
-				playedSignSound = true;
-			}
-			screen.drawTextBox(
-				Math.round(WIDTH / 2 - (sign.message.length / 2 + 2)),
-				22,
-				sign.message,
-				{
-					borderColour: "#d7af00"
-				}
-			);
-		}
-	}
-	if (!onSign) {
-		playedSignSound = false;
-	}
+	testPlayerCollision();
 }
 
 
@@ -136,7 +122,7 @@ function movement(deltaTime) {
 
 		moveCooldown.x = moveCooldownTime.x;
 
-		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
+		if (testPlayerWallCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerX += (input.isPressed("KeyA") - input.isPressed("KeyD"));
 			moveCooldown.x = 0;
 		}
@@ -146,7 +132,7 @@ function movement(deltaTime) {
 		playerY -= (input.isPressed("KeyW") - input.isPressed("KeyS"));
 		moveCooldown.y = moveCooldownTime.y;
 
-		if (testPlayerCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
+		if (testPlayerWallCollision(playerX, playerY, maps[currentMap].collision, mapOffset.x, mapOffset.y)) {
 			playerY += (input.isPressed("KeyW") - input.isPressed("KeyS"));
 			moveCooldown.y = 0;
 		}
@@ -160,15 +146,39 @@ function movement(deltaTime) {
 }
 
 
-function testPlayerCollision(x, y, collisionMap, mapOffsetX = 0, mapOffsetY = 0, collisionChar = "#") {
-	let mapArray = collisionMap.split("\n");
-
-	if (y - mapOffsetY < 0 || y - mapOffsetY >= mapArray.length) return false;
-	if (x - mapOffsetX < 0 || x - mapOffsetX >= mapArray[y - mapOffsetY].length) return false;
-
-	if (mapArray[y - mapOffsetY][x - mapOffsetX] === collisionChar) {
-
-		return true;
-	};
+function testPlayerWallCollision() {
+	const data = getTileData(playerX - mapOffset.x, playerY - mapOffset.y, maps[currentMap].collisions);
+	if (data === null) {
+		return false;
+	}
+	if (data[0] === "wall") {
+		return true
+	}
 	return false;
+}
+
+function testPlayerCollision() {
+	const data = getTileData(playerX - mapOffset.x, playerY - mapOffset.y, maps[currentMap].collisions);
+	if (data === null) {
+		return;
+	}
+
+	if (data[0] === "sign") {
+		const message = data[1];
+		screen.drawTextBox(
+			Math.round(WIDTH / 2 - (message.length / 2 + 2)),
+			22,
+			message,
+			{
+				borderColour: "#d7af00"
+			}
+		);
+	}
+
+	if (data[0] === "transition") {
+		const nextLevel = data[1];		
+		const spawnLocation = data[2];
+
+		switchMap(nextLevel, spawnLocation);
+	}
 }
