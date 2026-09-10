@@ -41,7 +41,7 @@ padding_right = 0
 [definitions]
 # = wall
 d = transition "castle_front" "gate"
-> = transition "forest" "left"
+> = transition "castle_side" "castle"
 1 = spawn "gate"
 2 = spawn "lower_right"
 ! = sign "You are inside the castle!"

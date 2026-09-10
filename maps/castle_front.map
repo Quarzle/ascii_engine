@@ -13,9 +13,9 @@ padding_right = 0
 ║          ╲    |. |. .|  ___  |. . . . . . .|. |    ║
             ╲   |. |   | |   | |             |. |   ╱║
 :::          ╲__|__|___|_|   |_|_____________|__|__╱ ║
-                 #####           ###     ###         ║
-║                \/  #           #                   ║
-║                    #           #   \/              ║
+                 #####           ###     ###          
+║                \/  #           #                    
+║                    #           #   \/               
 ║###.                '           '                   ║
 ║ @ ###.                                         .###║
 ║   #  ##                                      ### @ ║
@@ -32,9 +32,9 @@ padding_right = 0
 #          #    |. |. .| ##### |. . . . . . .|. |    #
 <           #   |. |   | #^^^# |             |. |   ##
 <1           ######|_##### 2 #############__######## #
-<                #####           ###     ###         #
-#                    #           #                   #
-#                    #           #                   #
+<                #####           ###     ###         >
+#                    #           #                  5>
+#                    #           #                   >
 ####                       S                         #
 #   ###                                           ####
 #      ##                                      ###   #
@@ -46,6 +46,7 @@ padding_right = 0
 [definitions]
 # = wall
 < = transition "forest" "right"
+> = transition "castle_side" "left"
 ^ = transition "castle_court" "gate"
 a = transition "garden_loop" "upper_left"
 b = transition "garden_loop" "upper_right"
@@ -54,3 +55,4 @@ S = spawn "centre"
 2 = spawn "gate"
 3 = spawn "lower_left"
 4 = spawn "lower_right"
+5 = spawn "right"
