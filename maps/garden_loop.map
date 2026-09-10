@@ -1,0 +1,48 @@
+[data]
+name = "garden_loop"
+padding_top = 3
+padding_bottom = 0
+padding_left = 0
+padding_right = 0
+
+
+[display]
+╔═══════#══          # # # # # # #         ══#═══════╗
+║    @  #            # @  # #  @ #           #  @    ║
+║      #            #   #     #   #           #      ║
+║  @  #\/           # @ #  @  # @ #            #  @  ║
+║    #             # #   #   #   # #        \/  #    ║
+║    #             #  @ #  #  # @  #            #    ║
+║   #               ##   @   @   ##              #   ║
+║   #                 ###########                #   ║
+║   #       \/                                   #   ║
+║    ##                                        ##    ║
+║  @   ###           \/                 \/  ###   @  ║
+║         ##################################         ║
+║       @                 @                  @       ║
+╚════════════════════════════════════════════════════╝
+
+[collisions]
+###########aaaaaaaaaa# # # # # # #bbbbbbbbb###########
+#       #      1                      2      #       #
+#      #            #             #           #      #
+#     #             #             #            #     #
+#    #             #               #            #    #
+#    #             #               #            #    #
+#   #               ##           ##              #   #
+#   #                 ###########                #   #
+#   #                                            #   #
+#    ##                                        ##    #
+#      ###                                  ###      #
+#         ##################################         #
+#                                                    #
+######################################################
+
+[definitions]
+# = wall
+a = transition "castle_front" "lower_left"
+b = transition "castle_front" "lower_right"
+1 = spawn "upper_left"
+2 = spawn "upper_right"
+i = sign "You are inside the walls."
+! = sign "This is a sign"

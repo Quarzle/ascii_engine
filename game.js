@@ -82,7 +82,7 @@ async function setup() {
 		ding: "audio/ding.mp3"
 	});
 
-	await switchMap("demo", "central");
+	await switchMap("castle_front", "centre");
 }
 
 
@@ -102,7 +102,7 @@ function update(deltaTime) {
 	screen.insertText(
 		playerX,
 		playerY,
-		colourText("▲", "red")
+		colourText("▲", "orange")
 	);
 }
 
@@ -115,7 +115,6 @@ function drawBackground() {
 		0,
 		title,
 		{
-			borderColour: "#d70000",
 			border: "rounded",
 		}
 	);
