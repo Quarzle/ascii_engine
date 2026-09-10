@@ -50,5 +50,5 @@ padding_right = 0
 < = transition "castle_court" "lower_right"
 1 = spawn "right"
 2 = spawn "left"
-! = sign "You are in a forest"
+! = sign "You are in a forest!"
 : = floor "grass"
