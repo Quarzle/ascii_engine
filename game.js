@@ -82,6 +82,17 @@ async function setup() {
 		ding: "audio/ding.mp3"
 	});
 
+	input.bindToAction("KeyW","up");
+	input.bindToAction("KeyA","left");
+	input.bindToAction("KeyS","down");
+	input.bindToAction("KeyD","right");
+		
+	input.bindToAction("ArrowUp","up");
+	input.bindToAction("ArrowLeft","left");
+	input.bindToAction("ArrowDown","down");
+	input.bindToAction("ArrowRight","right");
+
+
 	await switchMap("castle_front", "centre");
 }
 
@@ -135,8 +146,8 @@ function movement(deltaTime) {
 
 	if (moveCooldown.x < 0) {
 		const movementX =
-			input.isPressed("KeyA") -
-			input.isPressed("KeyD");
+			input.actionIsPressed("left") -
+			input.actionIsPressed("right");
 
 		playerX -= movementX;
 
@@ -150,8 +161,8 @@ function movement(deltaTime) {
 
 	if (moveCooldown.y < 0) {
 		const movementY =
-			input.isPressed("KeyW") -
-			input.isPressed("KeyS");
+			input.actionIsPressed("up") -
+			input.actionIsPressed("down");
 
 		playerY -= movementY;
 
@@ -164,7 +175,7 @@ function movement(deltaTime) {
 	}
 
 	// Teleport to the mouse on click
-	if (input.justPressed("mouse0")) {
+	if (input.justPressed("Mouse0")) {
 		playerX = input.getMousePosition().x;
 		playerY = input.getMousePosition().y;
 	}

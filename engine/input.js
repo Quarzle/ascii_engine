@@ -78,7 +78,7 @@ export class Input {
 	}
 
 	mouseDown(event) {
-		const button = "mouse" + event.button;
+		const button = "Mouse" + event.button;
 
 		if (!this.keysPressed.has(button)) {
 			this.keysPressed.add(button);
@@ -88,7 +88,7 @@ export class Input {
 
 	mouseUp(event) {
 		this.keysPressed.delete(
-			"mouse" + event.button
+			"Mouse" + event.button
 		);
 	}
 
