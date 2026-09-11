@@ -1,0 +1,39 @@
+[data]
+name = "windmill_inside"
+padding_top = 3
+padding_bottom = 0
+padding_left = 0
+padding_right = 0
+
+
+[display]
+╔────────────────────────────╗
+│                            │
+│                            │
+│                            │
+│                            │
+│                            │
+│                            │
+│                            │
+│                            │
+│                            │
+╚───────────     ────────────╝
+
+[collisions]
+##############################
+#                            #
+#                            #
+#                            #
+#                            #
+#                            #
+#                            #
+#                            #
+#                            #
+#             1              #
+############.....#############
+
+[definitions]
+# = wall
+d = transition "castle_front" "gate"
+. = transition "windmill" "door"
+1 = spawn "door"
