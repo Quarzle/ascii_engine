@@ -4,6 +4,7 @@ export class Input {
 
 		this.keysPressed = new Set();
 		this.keysJustPressed = new Set();
+		this.actions = {};
 
 		this.mouseX = 0;
 		this.mouseY = 0;
@@ -91,16 +92,19 @@ export class Input {
 		);
 	}
 
-	isPressed(key) {
-		return this.keysPressed.has(key) || this.keysJustPressed.has(key);
+	isPressed(inputCode) {
+		return (
+			this.keysPressed.has(inputCode) ||
+			this.keysJustPressed.has(inputCode)
+		);
 	}
 
-	justPressed(key, consume = false) {
+	justPressed(inputCode, consume = false) {
 		const pressed =
-			this.keysJustPressed.has(key);
+			this.keysJustPressed.has(inputCode);
 
 		if (pressed && consume) {
-			this.keysJustPressed.delete(key);
+			this.keysJustPressed.delete(inputCode);
 		}
 
 		return pressed;
@@ -149,5 +153,92 @@ export class Input {
 			x: Math.floor(localX / charWidth),
 			y: Math.floor(localY / lineHeight)
 		};
+	}
+
+
+	bindToAction(inputCode, actionName) {
+		if (!this.actions[actionName]) {
+			this.actions[actionName] = [];
+		}
+
+		if (!this.actions[actionName].includes(inputCode)) {
+			this.actions[actionName].push(inputCode);
+		}
+	}
+
+
+	unbindToAction(inputCode, actionName) {
+		const bindings = this.actions[actionName];
+
+		if (!bindings) {
+			return false;
+		}
+
+		const index = bindings.indexOf(inputCode);
+
+		if (index === -1) {
+			return false;
+		}
+
+		bindings.splice(index, 1);
+
+		// Clean up empty actions.
+		if (bindings.length === 0) {
+			delete this.actions[actionName];
+		}
+
+		return true;
+	}
+
+
+	unbindAction(actionName) {
+		if (!this.actions[actionName]) {
+			return false;
+		}
+
+		delete this.actions[actionName];
+
+		return true;
+	}
+
+
+	getActionBindings(actionName) {
+		return this.actions[actionName]
+			? [...this.actions[actionName]]
+			: [];
+	}
+
+
+	actionIsPressed(actionName) {
+		const bindings = this.actions[actionName];
+
+		if (!bindings) {
+			return false;
+		}
+
+		for (const inputCode of bindings) {
+			if (this.isPressed(inputCode)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+
+	actionJustPressed(actionName, consume = false) {
+		const bindings = this.actions[actionName];
+
+		if (!bindings) {
+			return false;
+		}
+
+		for (const inputCode of bindings) {
+			if (this.justPressed(inputCode, consume)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
