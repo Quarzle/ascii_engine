@@ -1,0 +1,34 @@
+[data]
+name = "hidden_garden_path"
+padding_top = 3
+padding_bottom = 0
+padding_left = 0
+padding_right = 0
+
+
+[display]
+#  @   \/          "           ##    ##
+#            @               @  #    #'
+###  @                @        ##    # 
+################################     # 
+                                    # @
+####################################   
+###           @                      @ 
+#      \/                @             
+
+[collisions]
+#  @   \/          "           ##^^^^##
+#            @               @  #  2 #'
+###  @                @        ##    # 
+################################     # 
+<1                                  # @
+####################################   
+###           @                      @ 
+#      \/                @             
+
+[definitions]
+# = wall
+< = transition "garden_loop" "secret"
+^ = transition "lower_bridge" "bottom"
+1 = spawn "left"
+2 = spawn "top"
