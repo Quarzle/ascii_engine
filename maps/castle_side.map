@@ -26,7 +26,7 @@ padding_right = 0
 ╔═  P/\═══════════════════════════#
 ║  /\__\                          #
 =_/__\#|   ##########       #######
-  |. # ####          #######      >
+  |. #^####          #######      >
 =_|. #^                          3>
 #_|. #^1                          >
 #######                        ####
@@ -40,6 +40,7 @@ padding_right = 0
 # = wall
 ^ = transition "castle_court" "lower_right"
 < = transition "castle_front" "right"
+> = transition "bridge" "left"
 1 = spawn "castle"
 2 = spawn "left"
 3 = spawn "right"
